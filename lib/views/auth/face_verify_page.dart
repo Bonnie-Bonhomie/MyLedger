@@ -11,13 +11,16 @@ class LivenessScreen extends StatefulWidget {
   State<LivenessScreen> createState() => _LivenessScreenState();
 }
 
-class _LivenessScreenState extends State<LivenessScreen> with WidgetsBindingObserver{
+class _LivenessScreenState extends State<LivenessScreen>
+    with WidgetsBindingObserver {
   late LivenessDetector _detector;
+  late CameraController _camera;
 
   String _instruction = "Initializing...";
   late StreamSubscription _subscription;
   bool _isCompleted = false;
   bool _hasError = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
@@ -41,10 +44,27 @@ class _LivenessScreenState extends State<LivenessScreen> with WidgetsBindingObse
 
     await _detector.initialize();
 
-   _subscription = _detector.stateStream.listen((state) {
+
+    _camera = _detector.cameraController!;
+
+    //  Wait until camera is initialized
+    while (!_camera.value.isInitialized) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    //  EXTRA: allow camera to stabilize (VERY IMPORTANT)
+    await Future.delayed(const Duration(seconds: 1));
+    _subscription = _detector.stateStream.listen((state) {
+
+      print("STATE: ${state.type}");
+      print("ERROR: ${state.error?.message}");
       if (!mounted) return;
 
       switch (state.type) {
+        case LivenessStateType.noFace:
+          setState(() => _instruction = "Stay a light place");
+          break;
+
         case LivenessStateType.faceDetected:
           setState(() => _instruction = "Face detected");
           break;
@@ -54,8 +74,10 @@ class _LivenessScreenState extends State<LivenessScreen> with WidgetsBindingObse
           break;
 
         case LivenessStateType.challengeInProgress:
-          setState(() =>
-          _instruction = state.currentChallenge?.instruction ?? "Follow instruction");
+          setState(
+            () => _instruction =
+                state.currentChallenge?.instruction ?? "Follow instruction",
+          );
           break;
 
         case LivenessStateType.completed:
@@ -77,7 +99,11 @@ class _LivenessScreenState extends State<LivenessScreen> with WidgetsBindingObse
       }
     });
 
-    // await _detector.start();
+    await _detector.start();
+
+    setState(() {
+      _isInitialized = true;
+    });
   }
 
   @override
@@ -90,7 +116,6 @@ class _LivenessScreenState extends State<LivenessScreen> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
-    final camera = _detector.cameraController;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -99,80 +124,81 @@ class _LivenessScreenState extends State<LivenessScreen> with WidgetsBindingObse
         backgroundColor: Colors.black,
       ),
       body:
-      camera == null || !camera.value.isInitialized
+          // _isInitialized
+      !_isInitialized
           ? const Center(child: CircularProgressIndicator())
           : Stack(
-        children: [
-          // Camera Preview
-          CameraPreview(camera),
-
-         // Face Overlay
-          Center(
-            child: Container(
-              width: 260,
-              height: 400,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _isCompleted
-                      ? Colors.green
-                      : _hasError
-                      ? Colors.red
-                      : Colors.white,
-                  width: 3,
-                ),
-                // borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ),
-
-          // Instruction Text
-          Positioned(
-            bottom: 80,
-            left: 20,
-            right: 20,
-            child: Column(
               children: [
-                Text(
-                  _instruction,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                // Camera Preview
+                CameraPreview(_camera),
+                // Face Overlay
+
+                Center(
+                  child: Container(
+                    width: 260,
+                    height: 350,
+                    decoration: BoxDecoration(
+                      // shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _isCompleted
+                            ? Colors.green
+                            : _hasError
+                            ? Colors.red
+                            : Colors.white,
+                        width: 3,
+                      ),
+                      // borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
 
-                // Retry Button
-                if (_hasError)
-                  ElevatedButton(
-                    onPressed: () async {
-                      setState(() {
-                        _hasError = false;
-                        _isCompleted = false;
-                        _instruction = "Restarting...";
-                      });
+                // Instruction Text
+                Positioned(
+                  bottom: 80,
+                  left: 20,
+                  right: 20,
+                  child: Column(
+                    children: [
+                      Text(
+                        _instruction,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
 
-                      await _detector.stop();
-                      await _detector.start();
-                    },
-                    child: const Text("Retry"),
+                      // Retry Button
+                      if (_hasError)
+                        ElevatedButton(
+                          onPressed: () async {
+                            setState(() {
+                              _hasError = false;
+                              _isCompleted = false;
+                              _instruction = "Restarting...";
+                            });
+
+                            await _detector.stop();
+                            await _detector.start();
+                          },
+                          child: const Text("Retry"),
+                        ),
+
+                      // Continue Button
+                      if (_isCompleted)
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context, true);
+                          },
+                          child: const Text("Continue"),
+                        ),
+                    ],
                   ),
-
-                // Continue Button
-                if (_isCompleted)
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context, true);
-                    },
-                    child: const Text("Continue"),
-                  ),
+                ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

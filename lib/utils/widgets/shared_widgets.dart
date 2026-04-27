@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:my_ledger/Models/ledger_model.dart';
+
 import 'package:my_ledger/utils/app_color.dart';
 
 
 
-// ─── Currency formatter ──────────────────────────────────────────────────────
+// Currency formatter
 String formatCurrency(double amount) {
   final formatter = NumberFormat.currency(
     locale: 'en_NG',
@@ -150,7 +150,7 @@ class PrimaryFAB extends StatelessWidget {
   }
 }
 
-// ─── Section header ──────────────────────────────────────────────────────────
+// Section header
 class SectionHeader extends StatelessWidget {
   final String title;
   final String? action;
