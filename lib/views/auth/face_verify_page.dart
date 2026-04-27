@@ -21,6 +21,7 @@ class _LivenessScreenState extends State<LivenessScreen>
   bool _isCompleted = false;
   bool _hasError = false;
   bool _isInitialized = false;
+  bool _isPositionLocked = false;
 
   @override
   void initState() {
@@ -29,14 +30,41 @@ class _LivenessScreenState extends State<LivenessScreen>
     _initLiveness();
   }
 
+  LivenessStateType? _lastState;
+  Timer? _debounce;
+
+  String _mapInstruction(LivenessState state) {
+    switch (state.type) {
+      case LivenessStateType.noFace:
+        return "Stay in a light environment";
+      case LivenessStateType.faceDetected:
+        return "Align your face inside the frame";
+
+      case LivenessStateType.positioned:
+        return "Hold still...";
+
+      case LivenessStateType.challengeInProgress:
+        return state.currentChallenge?.instruction ?? "Follow the instruction";
+
+      case LivenessStateType.completed:
+        return "Verification successful";
+
+      case LivenessStateType.error:
+        return state.error?.message ?? "Something went wrong";
+
+      default:
+        return "Initializing...";
+    }
+  }
+
   Future<void> _initLiveness() async {
     _detector = LivenessDetector(
       const LivenessConfig(
         challenges: [
           ChallengeType.blink,
           ChallengeType.smile,
-          ChallengeType.turnLeft,
-          ChallengeType.turnRight,
+          // ChallengeType.turnLeft,
+          // ChallengeType.turnRight,
         ],
         enableAntiSpoofing: true,
       ),
@@ -44,66 +72,60 @@ class _LivenessScreenState extends State<LivenessScreen>
 
     await _detector.initialize();
 
-
     _camera = _detector.cameraController!;
 
     //  Wait until camera is initialized
     while (!_camera.value.isInitialized) {
       await Future.delayed(const Duration(milliseconds: 100));
     }
-
-    //  EXTRA: allow camera to stabilize (VERY IMPORTANT)
     await Future.delayed(const Duration(seconds: 1));
-    _subscription = _detector.stateStream.listen((state) {
 
+    _subscription = _detector.stateStream.listen((state) {
       print("STATE: ${state.type}");
       print("ERROR: ${state.error?.message}");
-      if (!mounted) return;
-
-      switch (state.type) {
-        case LivenessStateType.noFace:
-          setState(() => _instruction = "Stay a light place");
-          break;
-
-        case LivenessStateType.faceDetected:
-          setState(() => _instruction = "Face detected");
-          break;
-
-        case LivenessStateType.positioned:
-          setState(() => _instruction = "Hold still...");
-          break;
-
-        case LivenessStateType.challengeInProgress:
-          setState(
-            () => _instruction =
-                state.currentChallenge?.instruction ?? "Follow instruction",
-          );
-          break;
-
-        case LivenessStateType.completed:
-          setState(() {
-            _instruction = "Verification Successful";
-            _isCompleted = true;
-          });
-          break;
-
-        case LivenessStateType.error:
-          setState(() {
-            _instruction = state.error?.message ?? "Error occurred";
-            _hasError = true;
-          });
-          break;
-
-        default:
-          break;
-      }
+      //Handle state changes
+     stateHandler(state);
     });
-
     await _detector.start();
 
     setState(() {
       _isInitialized = true;
     });
+  }
+
+  void stateHandler(LivenessState state) {
+
+      // if (!mounted) return;
+      if (state.type == _lastState) return;
+      _lastState = state.type;
+      _debounce?.cancel();
+      _debounce = Timer(const Duration(milliseconds: 400), () {
+        if (!mounted) return;
+        if (state.type == LivenessStateType.positioned) {
+          Future.delayed(const Duration(seconds: 1), () {
+            _isPositionLocked = true;
+          });
+        }
+
+        if (!_isPositionLocked &&
+            state.type == LivenessStateType.challengeInProgress) {
+          return;
+        }
+
+        setState(() {
+          _instruction = _mapInstruction(state);
+
+          if (state.type == LivenessStateType.completed) {
+            _isCompleted = true;
+          }
+
+          if (state.type == LivenessStateType.error) {
+            _hasError = true;
+          }
+          //End
+        });
+      });
+    // });
   }
 
   @override
@@ -116,7 +138,6 @@ class _LivenessScreenState extends State<LivenessScreen>
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -124,15 +145,15 @@ class _LivenessScreenState extends State<LivenessScreen>
         backgroundColor: Colors.black,
       ),
       body:
-          // _isInitialized
-      !_isInitialized
+          !_isInitialized
+          // _camera == null || !_camera.value.isInitialized
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
                 // Camera Preview
                 CameraPreview(_camera),
-                // Face Overlay
 
+                // Face Overlay
                 Center(
                   child: Container(
                     width: 260,

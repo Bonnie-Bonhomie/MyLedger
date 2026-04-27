@@ -62,7 +62,7 @@ class MyLedgerApp extends StatelessWidget {
           '/login': (_) => const LoginScreen(),
           '/register': (_) => const RegisterScreen(),
           '/verify-email': (_) => const VerifyEmailScreen(),
-          '/face-verify': (_) => const LivenessScreen(),
+          '/face-verify': (_) => const FaceVerifyScreen(),
           '/dashboard': (_) => const DashboardScreen(),
         },
       ),

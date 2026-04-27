@@ -16,7 +16,7 @@ String formatCurrency(double amount) {
   return formatter.format(amount);
 }
 
-// ─── Stat card ───────────────────────────────────────────────────────────────
+// Stat card
 class StatCard extends StatelessWidget {
   final String label;
   final String value;
@@ -115,7 +115,6 @@ class BudgetProgressBar extends StatelessWidget {
     );
   }
 }
-
 
 
 class PrimaryFAB extends StatelessWidget {

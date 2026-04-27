@@ -18,6 +18,8 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
+
+
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
 
@@ -54,18 +56,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon:
-                Icon(Icons.receipt_long_rounded, color: AppColors.primary),
+            icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long_rounded, color: AppColors.primary),
             label: 'Ledger',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet_rounded,
+          ), NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet_rounded,
                 color: AppColors.primary),
             label: 'Budget',
-          ),
-          NavigationDestination(
+          ), NavigationDestination(
             icon: Icon(Icons.insights_outlined),
             selectedIcon: Icon(Icons.insights_rounded, color: AppColors.primary),
             label: 'Insights',
@@ -123,42 +120,21 @@ class _HomeTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Hello, ${auth.currentUser?.name.split(' ').first ?? 'User'}',
-                    style: GoogleFonts.spaceGrotesk(
-                        fontSize: 22, fontWeight: FontWeight.w700)),
-                Text("Here's your spending summary",
-                    style: TextStyle(
-                        fontSize: 13, color: AppColors.onSurfaceMuted)),
-              ],
-            ),
+                    style: GoogleFonts.spaceGrotesk(fontSize: 22, fontWeight: FontWeight.w700)),
+                Text("Here's your spending summary", style: TextStyle(fontSize: 13, color: AppColors.onSurfaceMuted)),
+              ],),
             actions: [
-              IconButton(
-                icon: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(10),
+              IconButton(icon: Container(
+                  width: 36, height: 36, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.person_outline_rounded,
-                      color: Colors.white, size: 20),
-                ),
-                onPressed: () {},
-              ),
-              const SizedBox(width: 8),
-            ],
-          ),
+                  child: const Icon(Icons.person_outline_rounded, color: Colors.white, size: 20),
+                ), onPressed: () {},), const SizedBox(width: 8),],),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // ─ Spending overview card ─
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryDark],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(gradient: const LinearGradient(
+                      colors: [AppColors.primary, AppColors.primaryDark], begin: Alignment.topLeft, end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -197,6 +173,7 @@ class _HomeTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+
 
                 // ─ Quick stats ─
                 Row(
